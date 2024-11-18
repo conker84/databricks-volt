@@ -15,7 +15,7 @@ import scala.jdk.CollectionConverters.{asScalaIteratorConverter, seqAsJavaListCo
 import scala.util.Try
 
 object ShowTablesExtendedCommand {
-  private val schema: StructType = new StructType()
+  private[command] val schema: StructType = new StructType()
     .add("table_catalog", StringType)
     .add("table_schema", StringType)
     .add("table_name", StringType)
@@ -75,45 +75,49 @@ case class ShowTablesExtendedCommand(plainFiltersOpt: Option[String])
         |AND data_source_format NOT IN ('UNKNOWN_DATA_SOURCE_FORMAT', 'DELTASHARING')
         |""".stripMargin)
 
-    val (list, hasError) = try {
+    val (list: java.util.List[Row], hasError: Boolean) = try {
       (baseDf
         .where(plainFilters)
         .collectAsList(), false)
     } catch {
-      case t: Throwable => (baseDf.collectAsList(), plainFilters.nonEmpty)
+      case _: Throwable => (baseDf.collectAsList(), plainFilters.nonEmpty)
     }
 
     val result: Iterator[Row] = list
       .parallelStream()
       .map(row => {
-        val (size: Option[Long], lcCols: Seq[String]) = if (row.getAs[String]("data_source_format") == "DELTA") {
-          val ret: AnyRef = forTableMethod.invoke(null, spark,
-            TableIdentifier(
-              row.getAs[String]("table_name"),
-              Option(row.getAs[String]("table_schema")),
-              Option(row.getAs[String]("table_catalog"))
+        val (size: Option[Long], lcCols: Seq[String]) = try {
+          if (row.getAs[String]("data_source_format") == "DELTA") {
+            val ret: AnyRef = forTableMethod.invoke(null, spark,
+              TableIdentifier(
+                row.getAs[String]("table_name"),
+                Option(row.getAs[String]("table_schema")),
+                Option(row.getAs[String]("table_catalog"))
+              )
             )
-          )
-          val snapshot = ret.getClass
-            .getMethod("snapshot")
-            .invoke(ret)
-          val size = Try(
+            val snapshot = ret.getClass
+              .getMethod("snapshot")
+              .invoke(ret)
+            val size = Try(
               snapshot.getClass
-              .getMethod("sizeInBytes")
-              .invoke(snapshot)
-              .asInstanceOf[Long]
+                .getMethod("sizeInBytes")
+                .invoke(snapshot)
+                .asInstanceOf[Long]
             )
-            .map(Option.apply)
-            .getOrElse(None)
-          val lcCols = Try(
+              .map(Option.apply)
+              .getOrElse(None)
+            val lcCols = Try(
               extractLogicalNamesMethod
                 .invoke(clusteringColumnInfoClazz, snapshot)
-              .asInstanceOf[Seq[String]]
+                .asInstanceOf[Seq[String]]
             )
-            .getOrElse(Seq.empty[String])
-          (size, lcCols)
-        } else {
-          (None, Seq.empty[String])
+              .getOrElse(Seq.empty[String])
+            (size, lcCols)
+          } else {
+            (None, Seq.empty[String])
+          }
+        } catch {
+          case _: Throwable => (None, Seq.empty[String])
         }
 
         val storagePath = row.getAs[String]("storage_path")

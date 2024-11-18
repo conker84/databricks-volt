@@ -22,6 +22,7 @@
         <azure-identity.version>1.14.1</azure-identity.version>
         <azure-core.version>1.54.0</azure-core.version>
         <azure-storage-file-datalake.version>12.21.0</azure-storage-file-datalake.version>
+        <mockito-core.version>4.4.0</mockito-core.version>
     </properties>
 
     <dependencies>
@@ -83,6 +84,13 @@
             <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito-core.version}</version>
+            <scope>test</scope>
+        </dependency>
+
 
     </dependencies>
 
