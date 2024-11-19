@@ -93,7 +93,7 @@ def _showTablesExtended(self, filter: str="") -> DataFrame:
     catalog = self._sparkSession._jsparkSession.catalog
     jdf = (
         self._sparkSession._jvm
-        .com.databricks.extensions.apis
+        .com.databricks.extensions.apis.CatalogExtensions
         .showTablesExtended(catalog, filter)
     )
     return DataFrame(jdf, self._sparkSession)
