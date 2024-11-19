@@ -62,7 +62,7 @@ class CloneSchemaCommandTest extends AnyFunSuite with Matchers with BeforeAndAft
 
     // Verify the results
     result should have size 2
-    result.head.getAs[String]("status") shouldBe "OK"
+    result(0).getAs[String]("status") shouldBe "OK"
     result(1).getAs[String]("status") shouldBe "OK"
 
     // Verify interactions

@@ -6,7 +6,8 @@ object ReflectionUtils {
 
   @tailrec
   def forName(className: String*): Class[_] = try {
-    Class.forName(className.head)
+    if (className.isEmpty) return null
+    Class.forName(className(0))
   } catch {
     case cfe: ClassNotFoundException =>
       val list = className.drop(1)

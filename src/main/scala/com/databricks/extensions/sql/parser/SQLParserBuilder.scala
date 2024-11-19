@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.Token
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import scala.jdk.CollectionConverters.asScalaBufferConverter
+import scala.util.{Failure, Success, Try}
 
 case class CloneHeaderMetadata(entity: Entity, create: Boolean, replace: Boolean, ifNotExists: Boolean)
 
@@ -53,7 +54,11 @@ class SQLParserBuilder extends SQLParserBaseBaseVisitor[AnyRef] {
   }
 
   override def visitCloneCatalogHeader(ctx: SQLParserBaseParser.CloneCatalogHeaderContext): AnyRef = withOrigin(ctx) {
-    ctx.children.asScala.head match {
+    val head = ctx.children.asScala.headOption match {
+      case Some(value) => value
+      case None => throw new RuntimeException("Catalog Header not found")
+    }
+    head match {
       case createHeader: CreateCatalogHeaderContext =>
         CloneHeaderMetadata(visitCatalogIdentifier(createHeader.catalog), true, false, createHeader.EXISTS() != null)
       case replaceHeader: ReplaceCatalogHeaderContext =>
@@ -63,7 +68,11 @@ class SQLParserBuilder extends SQLParserBaseBaseVisitor[AnyRef] {
   }
 
   override def visitCloneSchemaHeader(ctx: SQLParserBaseParser.CloneSchemaHeaderContext): AnyRef = withOrigin(ctx) {
-    ctx.children.asScala.head match {
+    val head = ctx.children.asScala.headOption match {
+      case Some(value) => value
+      case None => throw new RuntimeException("Catalog Header not found")
+    }
+    head match {
       case createHeader: CreateSchemaHeaderContext =>
         CloneHeaderMetadata(visitSchemaIdentifier(createHeader.schema), true, false, createHeader.EXISTS() != null)
       case replaceHeader: ReplaceSchemaHeaderContext =>

@@ -62,11 +62,12 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
 
     // Validate the result
     result should not be empty
-    result.head.getAs[String]("table_catalog") shouldBe "catalog1"
-    result.head.getAs[String]("table_schema") shouldBe "schema1"
-    result.head.getAs[String]("table_name") shouldBe "table1"
-    result.head.getAs[Double]("size_in_gb") shouldBe None
-    result.head.getAs[Long]("size_in_bytes") shouldBe None
+    val first = result(0)
+    first.getAs[String]("table_catalog") shouldBe "catalog1"
+    first.getAs[String]("table_schema") shouldBe "schema1"
+    first.getAs[String]("table_name") shouldBe "table1"
+    first.getAs[Double]("size_in_gb") shouldBe None
+    first.getAs[Long]("size_in_bytes") shouldBe None
 
     // Verify interactions
     verify(spark).sql(any[String])

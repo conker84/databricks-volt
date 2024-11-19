@@ -16,7 +16,7 @@ object CatalogExtensions {
                           replace: Boolean = false,
                           ifNotExists: Boolean = false
                         ): DataFrame = {
-      val spark = SparkSession.getActiveSession.get
+      val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
       CloneCatalogCommand("DEEP", currentCatalogIdentifier, targetCatalogIdentifier, managedLocation,
@@ -31,7 +31,7 @@ object CatalogExtensions {
                              replace: Boolean = false,
                              ifNotExists: Boolean = false
                            ): DataFrame = {
-      val spark = SparkSession.getActiveSession.get
+      val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
       CloneCatalogCommand("SHALLOW", currentCatalogIdentifier, targetCatalogIdentifier, managedLocation,
@@ -46,7 +46,7 @@ object CatalogExtensions {
                          replace: Boolean = false,
                          ifNotExists: Boolean = false
                        ): DataFrame = {
-      val spark = SparkSession.getActiveSession.get
+      val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
       CloneSchemaCommand("DEEP", currentSchema, targetSchema, managedLocation,
         create, replace, ifNotExists)
@@ -60,7 +60,7 @@ object CatalogExtensions {
                             replace: Boolean = false,
                             ifNotExists: Boolean = false
                           ): DataFrame = {
-      val spark = SparkSession.getActiveSession.get
+      val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
       CloneSchemaCommand("SHALLOW", currentSchema, targetSchema, managedLocation,
         create, replace, ifNotExists)
@@ -68,7 +68,7 @@ object CatalogExtensions {
     }
 
     def showTablesExtended(filter: String): DataFrame = {
-      val spark = SparkSession.getActiveSession.get
+      val spark = SparkSession.active
       val innerFilter = if (StringUtils.isBlank(filter))
         s"table_catalog = '${catalog.currentCatalog()}' AND table_schema = '${catalog.currentDatabase}'"
       else

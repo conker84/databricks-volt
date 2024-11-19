@@ -23,6 +23,7 @@
         <azure-core.version>1.54.0</azure-core.version>
         <azure-storage-file-datalake.version>12.21.0</azure-storage-file-datalake.version>
         <mockito-core.version>4.4.0</mockito-core.version>
+        <scalac-scapegoat.version>3.1.2</scalac-scapegoat.version>
     </properties>
 
     <dependencies>
@@ -78,6 +79,12 @@
             <scope>provided</scope>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>com.sksamuel.scapegoat</groupId>-->
+<!--            <artifactId>scalac-scapegoat-plugin_2.12.20</artifactId>-->
+<!--            <version>${scalac-scapegoat.version}</version>-->
+<!--        </dependency>-->
+
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.base.version}</artifactId>
@@ -90,8 +97,6 @@
             <version>${mockito-core.version}</version>
             <scope>test</scope>
         </dependency>
-
-
     </dependencies>
 
     <build>
@@ -106,6 +111,22 @@
         <!-- Add generated ANTLR sources to compile classpath -->
         <sourceDirectory>${project.build.directory}/generated-sources/antlr</sourceDirectory>
         <plugins>
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <configuration>
+                    <args>
+                        <arg>-P:scapegoat:dataDir:${project.basedir}/target/scapegoat</arg>
+                    </args>
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <groupId>com.sksamuel.scapegoat</groupId>
+                            <artifactId>scalac-scapegoat-plugin_2.12.20</artifactId>
+                            <version>${scalac-scapegoat.version}</version>
+                        </compilerPlugin>
+                    </compilerPlugins>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>

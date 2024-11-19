@@ -87,7 +87,7 @@ class CloneCatalogCommandTest extends AnyFunSuite with Matchers with BeforeAndAf
 
     // Assertions
     result should have size 4
-    result.head.getAs[String]("status") shouldBe "OK"
+    result(0).getAs[String]("status") shouldBe "OK"
     result(1).getAs[String]("status") shouldBe "OK"
     result(2).getAs[String]("status") shouldBe "OK"
     result(3).getAs[String]("status") shouldBe "OK"
