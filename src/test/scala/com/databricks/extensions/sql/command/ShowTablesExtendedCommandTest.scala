@@ -17,9 +17,8 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
 
   private val schema = ShowTablesExtendedCommand.schema
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     spark = mock(classOf[SparkSession])
-  }
 
   test("run command with mock SparkSession using GenericRowWithSchema") {
     // Construct mock data using GenericRowWithSchema
@@ -27,9 +26,9 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
       new org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema(
         Array(
           "catalog1", // table_catalog
-          "schema1",  // table_schema
-          "table1",   // table_name
-          "MANAGED",  // table_type
+          "schema1", // table_schema
+          "table1", // table_name
+          "MANAGED", // table_type
           "/path/to/storage1", // storage_path
           Timestamp.valueOf("2024-01-01 12:00:00"), // created
           "user1", // created_by
@@ -39,7 +38,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
           null, // size_in_gb
           null, // size_in_bytes
           null, // full_size_in_gb
-          null,  // full_size_in_bytes
+          null, // full_size_in_bytes
           "CSV"
         ),
         schema.copy().add("data_source_format", StringType)

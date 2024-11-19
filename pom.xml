@@ -24,6 +24,7 @@
         <azure-storage-file-datalake.version>12.21.0</azure-storage-file-datalake.version>
         <mockito-core.version>4.4.0</mockito-core.version>
         <scalac-scapegoat.version>3.1.2</scalac-scapegoat.version>
+        <mvn-scalafmt_2.12.version>1.1.1640084764.9f463a9</mvn-scalafmt_2.12.version>
     </properties>
 
     <dependencies>
@@ -112,20 +113,20 @@
         <sourceDirectory>${project.build.directory}/generated-sources/antlr</sourceDirectory>
         <plugins>
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
+                <groupId>org.antipathy</groupId>
+                <artifactId>mvn-scalafmt_${scala.base.version}</artifactId>
+                <version>${mvn-scalafmt_2.12.version}</version>
                 <configuration>
-                    <args>
-                        <arg>-P:scapegoat:dataDir:${project.basedir}/target/scapegoat</arg>
-                    </args>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>com.sksamuel.scapegoat</groupId>
-                            <artifactId>scalac-scapegoat-plugin_2.12.20</artifactId>
-                            <version>${scalac-scapegoat.version}</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
+                    <configLocation>${project.basedir}/scalafmt.conf</configLocation> <!-- path to config -->
                 </configuration>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.antlr</groupId>
@@ -206,6 +207,18 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <args>
+                        <arg>-P:scapegoat:dataDir:${project.basedir}/target/scapegoat</arg>
+                    </args>
+                    <compilerPlugins>
+                        <compilerPlugin>
+                            <groupId>com.sksamuel.scapegoat</groupId>
+                            <artifactId>scalac-scapegoat-plugin_2.12.20</artifactId>
+                            <version>${scalac-scapegoat.version}</version>
+                        </compilerPlugin>
+                    </compilerPlugins>
+                </configuration>
             </plugin>
 
             <!-- scala assembly-->

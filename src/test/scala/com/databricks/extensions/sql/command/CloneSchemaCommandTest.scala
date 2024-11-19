@@ -15,9 +15,8 @@ class CloneSchemaCommandTest extends AnyFunSuite with Matchers with BeforeAndAft
   private var spark: SparkSession = _
   private val schema = CloneSchemaCommand.schema
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     spark = mock(classOf[SparkSession])
-  }
 
   test("validate method should throw exceptions for invalid options") {
     // Test for invalid create/replace/ifNotExists combinations
@@ -35,23 +34,30 @@ class CloneSchemaCommandTest extends AnyFunSuite with Matchers with BeforeAndAft
     val targetEntity = SchemaIdentifier("target_schema", Some("target_catalog"))
     val cloneType = "DEEP"
     val managedLocation = "/path/to/managed"
-    val command = CloneSchemaCommand(cloneType, targetEntity, sourceEntity, managedLocation, create = true, replace = false, ifNotExists = false)
+    val command = CloneSchemaCommand(
+      cloneType,
+      targetEntity,
+      sourceEntity,
+      managedLocation,
+      create = true,
+      replace = false,
+      ifNotExists = false
+    )
 
     // Mock "SHOW TABLES IN" output
     val rowSchema = new StructType().add("tableName", StringType)
     val mockShowTables = mock(classOf[Dataset[Row]])
     when(mockShowTables.filter(anyString())).thenReturn(mockShowTables)
     when(mockShowTables.where(anyString())).thenReturn(mockShowTables)
-    val collectMockResult: Array[Row] = Array(
-      new GenericRowWithSchema(Array("table1"), rowSchema),
-      new GenericRowWithSchema(Array("table2"), rowSchema)
-    )
+    val collectMockResult: Array[Row] =
+      Array(new GenericRowWithSchema(Array("table1"), rowSchema), new GenericRowWithSchema(Array("table2"), rowSchema))
     when(mockShowTables.collect()).thenReturn(collectMockResult)
     when(spark.sql(contains("SHOW TABLES IN `source_catalog`.`source_schema`"))).thenReturn(mockShowTables)
 
     // Mock schema creation
     val mockCreateSchema = mock(classOf[Dataset[Row]])
-    when(spark.sql(contains("CREATE SCHEMA `target_catalog`.`target_schema` MANAGED LOCATION '/path/to/managed'"))).thenReturn(mockCreateSchema)
+    when(spark.sql(contains("CREATE SCHEMA `target_catalog`.`target_schema` MANAGED LOCATION '/path/to/managed'")))
+      .thenReturn(mockCreateSchema)
 
     // Mock table cloning
     val mockCloneTable = mock(classOf[Dataset[Row]])

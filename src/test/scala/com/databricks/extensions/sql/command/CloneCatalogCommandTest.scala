@@ -16,9 +16,8 @@ class CloneCatalogCommandTest extends AnyFunSuite with Matchers with BeforeAndAf
 
   private val schema = CloneSchemaCommand.schema
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     sparkSession = mock(classOf[SparkSession])
-  }
 
   test("run command with valid source and target catalog") {
     // Mock for CloneCatalog
@@ -55,10 +54,8 @@ class CloneCatalogCommandTest extends AnyFunSuite with Matchers with BeforeAndAf
     val mockShowTables = mock(classOf[Dataset[Row]])
     when(mockShowTables.filter(anyString())).thenReturn(mockShowTables)
     when(mockShowTables.where(anyString())).thenReturn(mockShowTables)
-    val collectMockResult: Array[Row] = Array(
-      new GenericRowWithSchema(Array("table1"), rowSchema),
-      new GenericRowWithSchema(Array("table2"), rowSchema)
-    )
+    val collectMockResult: Array[Row] =
+      Array(new GenericRowWithSchema(Array("table1"), rowSchema), new GenericRowWithSchema(Array("table2"), rowSchema))
     when(mockShowTables.collect()).thenReturn(collectMockResult)
     when(sparkSession.sql(contains("SHOW TABLES IN `source_catalog`.`schema1`"))).thenReturn(mockShowTables)
     when(sparkSession.sql(contains("SHOW TABLES IN `source_catalog`.`schema2`"))).thenReturn(mockShowTables)
