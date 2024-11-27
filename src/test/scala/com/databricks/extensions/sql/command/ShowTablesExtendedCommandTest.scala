@@ -1,7 +1,6 @@
 package com.databricks.extensions.sql.command
 
-import org.apache.spark.sql.types.StringType
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterEach
@@ -49,6 +48,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     // Mock Dataset[Row] and its collectAsList behavior
     val mockDataset = mock(classOf[Dataset[Row]])
     when(mockDataset.schema).thenReturn(schema)
+    when(mockDataset.select(any[Column])).thenReturn(mockDataset)
     when(mockDataset.collectAsList()).thenReturn(mockData)
 
     // Mock SQL query
@@ -66,11 +66,13 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     first.getAs[String]("table_catalog") shouldBe "catalog1"
     first.getAs[String]("table_schema") shouldBe "schema1"
     first.getAs[String]("table_name") shouldBe "table1"
-    first.getAs[Double]("last_snapshot_size_in_gb") shouldBe None
-    first.getAs[Long]("last_snapshot_size_in_bytes") shouldBe None
-    val row: Row = first.getAs[Row]("metadata")
-    row.getAs[Long]("delta_log_size_in_gb") shouldBe None
-    row.getAs[Long]("delta_log_size_in_bytes") shouldBe None
+    val row: Row = first.getAs[Row]("size")
+    row.getAs[java.lang.Double]("delta_log_size_in_gb") shouldBe null
+    row.getAs[java.lang.Long]("delta_log_size_in_bytes") shouldBe null
+    row.getAs[java.lang.Double]("full_size_in_gb") shouldBe null
+    row.getAs[java.lang.Long]("full_size_in_bytes") shouldBe null
+    row.getAs[java.lang.Double]("last_snapshot_size_in_gb") shouldBe null
+    row.getAs[java.lang.Long]("last_snapshot_size_in_bytes") shouldBe null
 
     // Verify interactions
     verify(spark).sql(any[String])

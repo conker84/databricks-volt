@@ -1,7 +1,7 @@
 package com.databricks.extensions.sql.command
 
 import com.databricks.extensions.fs.ReadFileSystem
-import com.databricks.extensions.sql.command.ShowTablesExtendedCommand.{filterStar, metadataSchema, nonPushableCols, selectColNames, toGb, schema}
+import com.databricks.extensions.sql.command.ShowTablesExtendedCommand.{filterStar, sizeSchema, nonPushableCols, selectColNames, toGb, schema}
 import com.databricks.extensions.sql.utils.DeltaMetadataUtils
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
@@ -13,7 +13,11 @@ import java.sql.Timestamp
 import scala.jdk.CollectionConverters.{asScalaIteratorConverter, seqAsJavaListConverter}
 
 object ShowTablesExtendedCommand {
-  private val metadataSchema: StructType = new StructType()
+  private val sizeSchema: StructType = new StructType()
+    .add("full_size_in_gb", DoubleType)
+    .add("full_size_in_bytes", LongType)
+    .add("last_snapshot_size_in_gb", DoubleType)
+    .add("last_snapshot_size_in_bytes", LongType)
     .add("delta_log_size_in_gb", DoubleType)
     .add("delta_log_size_in_bytes", LongType)
   private[command] val schema: StructType = new StructType()
@@ -28,21 +32,13 @@ object ShowTablesExtendedCommand {
     .add("last_altered_by", StringType)
     .add("last_altered", TimestampType)
     .add("liquid_clustering_cols", ArrayType(StringType))
-    .add("last_snapshot_size_in_gb", DoubleType)
-    .add("last_snapshot_size_in_bytes", LongType)
-    .add("full_size_in_gb", DoubleType)
-    .add("full_size_in_bytes", LongType)
-    .add("metadata", metadataSchema)
+    .add("size", sizeSchema)
 
   private val toGb = Math.pow(10, 9)
 
   private val nonPushableCols = Set(
     "liquid_clustering_cols",
-    "last_snapshot_size_in_gb",
-    "last_snapshot_size_in_bytes",
-    "full_size_in_gb",
-    "full_size_in_bytes",
-    "metadata"
+    "size"
   )
 
   private val selectColNames = schema
@@ -114,12 +110,16 @@ case class ShowTablesExtendedCommand(filters: Column)
             (None, Seq.empty, None)
           }
 
-        val metadata = new GenericRowWithSchema(
+        val size = new GenericRowWithSchema(
           Array(
-            deltaLogSize.map(_ / toGb).orNull,
-            deltaLogSize.orNull,
+            fullSize.map(_ / toGb).orNull, // full_size_in_gb
+            fullSize.orNull, // full_size_in_bytes
+            snapshotSize.map(_ / toGb).orNull, // last_snapshot_size_in_gb
+            snapshotSize.orNull, // last_snapshot_size_in_bytes
+            deltaLogSize.map(_ / toGb).orNull, // delta_log_size_in_gb
+            deltaLogSize.orNull, // delta_log_size_in_bytes
           ),
-          metadataSchema)
+          sizeSchema)
         val data: Array[Any] = Array(
           row.getAs[String]("table_catalog"),
           row.getAs[String]("table_schema"),
@@ -132,11 +132,7 @@ case class ShowTablesExtendedCommand(filters: Column)
           row.getAs[String]("last_altered_by"),
           row.getAs[String]("last_altered"),
           lcCols, // liquid_clustering_cols
-          snapshotSize.map(_ / toGb).orNull, // last_snapshot_size_in_gb
-          snapshotSize.orNull, // last_snapshot_size_in_bytes
-          fullSize.map(_ / toGb).orNull, // full_size_in_gb
-          fullSize.orNull, // full_size_in_bytes
-          metadata
+          size
         )
         new GenericRowWithSchema(data, schema)
       })
