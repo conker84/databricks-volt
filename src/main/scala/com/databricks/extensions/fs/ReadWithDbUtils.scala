@@ -5,7 +5,7 @@ import com.databricks.sdk.scala.dbutils.{DBUtils, FileInfo}
 import java.net.URI
 
 
-class ReadWithDbUtils extends ReadFileSystem {
+private[fs] class ReadWithDbUtils extends ReadFileSystem {
 
   private def readRecursively(
                                location: String,

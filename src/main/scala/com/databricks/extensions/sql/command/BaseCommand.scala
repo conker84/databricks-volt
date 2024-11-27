@@ -1,6 +1,5 @@
 package com.databricks.extensions.sql.command
 
-import com.databricks.extensions.sql.utils.CatalystUtils
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.command.LeafRunnableCommand

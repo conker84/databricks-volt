@@ -29,6 +29,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
           "schema1", // table_schema
           "table1", // table_name
           "MANAGED", // table_type
+          "CSV", // data_source_format
           "/path/to/storage1", // storage_path
           Timestamp.valueOf("2024-01-01 12:00:00"), // created
           "user1", // created_by
@@ -39,9 +40,9 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
           null, // size_in_bytes
           null, // full_size_in_gb
           null, // full_size_in_bytes
-          "CSV"
+          null
         ),
-        schema.copy().add("data_source_format", StringType)
+        schema
       )
     )
 
@@ -54,7 +55,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     when(spark.sql(any[String])).thenReturn(mockDataset)
 
     // Instantiate the command
-    val command = ShowTablesExtendedCommand(None)
+    val command = ShowTablesExtendedCommand(ShowTablesExtendedCommand.filterStar)
 
     // Run the command
     val result = command.run(spark)
@@ -65,8 +66,11 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     first.getAs[String]("table_catalog") shouldBe "catalog1"
     first.getAs[String]("table_schema") shouldBe "schema1"
     first.getAs[String]("table_name") shouldBe "table1"
-    first.getAs[Double]("size_in_gb") shouldBe None
-    first.getAs[Long]("size_in_bytes") shouldBe None
+    first.getAs[Double]("last_snapshot_size_in_gb") shouldBe None
+    first.getAs[Long]("last_snapshot_size_in_bytes") shouldBe None
+    val row: Row = first.getAs[Row]("metadata")
+    row.getAs[Long]("delta_log_size_in_gb") shouldBe None
+    row.getAs[Long]("delta_log_size_in_bytes") shouldBe None
 
     // Verify interactions
     verify(spark).sql(any[String])

@@ -1,70 +1,62 @@
 package com.databricks.extensions.sql.command
 
-import com.databricks.extensions.fs.MultiCloudFSReader
-import com.databricks.extensions.sql.command.ShowTablesExtendedCommand.{clusteringColumnInfoClazz, deltaLogClazz, extractLogicalNamesMethod, forTableMethod}
-import com.databricks.extensions.sql.parser.ReflectionUtils
-import com.databricks.extensions.sql.utils.CatalystUtils
+import com.databricks.extensions.fs.ReadFileSystem
+import com.databricks.extensions.sql.command.ShowTablesExtendedCommand.{filterStar, metadataSchema, nonPushableCols, selectColNames, toGb, schema}
+import com.databricks.extensions.sql.utils.DeltaMetadataUtils
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ArrayType, DoubleType, LongType, StringType, StructType, TimestampType}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Column, Row, SparkSession, functions}
 
 import java.net.URI
 import java.sql.Timestamp
 import scala.jdk.CollectionConverters.{asScalaIteratorConverter, seqAsJavaListConverter}
-import scala.util.Try
 
 object ShowTablesExtendedCommand {
+  private val metadataSchema: StructType = new StructType()
+    .add("delta_log_size_in_gb", DoubleType)
+    .add("delta_log_size_in_bytes", LongType)
   private[command] val schema: StructType = new StructType()
     .add("table_catalog", StringType)
     .add("table_schema", StringType)
     .add("table_name", StringType)
     .add("table_type", StringType)
+    .add("data_source_format", StringType)
     .add("storage_path", StringType)
     .add("created", TimestampType)
     .add("created_by", StringType)
-    .add("liquid_clustering_cols", ArrayType(StringType))
     .add("last_altered_by", StringType)
     .add("last_altered", TimestampType)
-    .add("size_in_gb", DoubleType)
-    .add("size_in_bytes", LongType)
+    .add("liquid_clustering_cols", ArrayType(StringType))
+    .add("last_snapshot_size_in_gb", DoubleType)
+    .add("last_snapshot_size_in_bytes", LongType)
     .add("full_size_in_gb", DoubleType)
     .add("full_size_in_bytes", LongType)
+    .add("metadata", metadataSchema)
 
-  // TODO move this to method handles
-  // and add a proper validation for class not present
-  private val deltaLogClazz = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.DeltaLog")
-  private val clusteringColumnInfoClazz = ReflectionUtils.forName("com.databricks.sql.io.skipping.liquid.ClusteringColumnInfo")
-  private val snapshotClazz = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.Snapshot")
-  private val forTableMethod = if (deltaLogClazz != null)
-    deltaLogClazz.getMethod("forTable", classOf[SparkSession], classOf[TableIdentifier])
-  else
-    null
-  private val extractLogicalNamesMethod = if (clusteringColumnInfoClazz != null)
-    clusteringColumnInfoClazz.getMethod("extractLogicalNames", snapshotClazz)
-  else
-    null
+  private val toGb = Math.pow(10, 9)
+
+  private val nonPushableCols = Set(
+    "liquid_clustering_cols",
+    "last_snapshot_size_in_gb",
+    "last_snapshot_size_in_bytes",
+    "full_size_in_gb",
+    "full_size_in_bytes",
+    "metadata"
+  )
+
+  private val selectColNames = schema
+    .filterNot(f => nonPushableCols.contains(f.name))
+    .map(_.name)
+    .map(functions.col)
+
+  val filterStar: Column = functions.col("*")
 }
 
-case class ShowTablesExtendedCommand(plainFiltersOpt: Option[String])
-  extends BaseCommand(ShowTablesExtendedCommand.schema)  {
+case class ShowTablesExtendedCommand(filters: Column)
+  extends BaseCommand(schema)  {
 
   override def run(spark: SparkSession): Seq[Row] = {
-    val plainFilters = plainFiltersOpt.getOrElse("")
-    val parsedFilter = CatalystUtils.parsePredicates(spark, plainFiltersOpt.toSeq)
-    val filteredCols = CatalystUtils.extractAttributes(parsedFilter)
-
-    val schemaCols = schema.fieldNames.toSet
-
-    val notInSchema = filteredCols.diff(schemaCols)
-    if (notInSchema.nonEmpty) {
-      throw new RuntimeException(
-        s"""
-          |The following columns are not available [${notInSchema.mkString(",")}]
-          |Table schema is [${schemaCols.mkString(",")}]
-          |""".stripMargin)
-    }
-
     val baseDf = spark.sql(
       """
         |SELECT *
@@ -74,71 +66,77 @@ case class ShowTablesExtendedCommand(plainFiltersOpt: Option[String])
         |AND table_catalog NOT IN ('system', '__databricks_internal')
         |AND data_source_format NOT IN ('UNKNOWN_DATA_SOURCE_FORMAT', 'DELTASHARING')
         |""".stripMargin)
+      .select(selectColNames :_*)
 
     val (list: java.util.List[Row], hasError: Boolean) = try {
       (baseDf
-        .where(plainFilters)
+        .where(filters)
         .collectAsList(), false)
     } catch {
-      case _: Throwable => (baseDf.collectAsList(), plainFilters.nonEmpty)
+      case _: Throwable =>
+        logWarning(
+          s"""
+            |We cannot push down the filters `$filters` properly.
+            |In order to speed up the query execution please check, and exclude, one of the following:
+            |${nonPushableCols.map(c => s"- `$c`").mkString("\n")}
+            |""".stripMargin)
+        (baseDf.collectAsList(), filters != filterStar)
     }
 
     val result: Iterator[Row] = list
       .parallelStream()
       .map(row => {
-        val (size: Option[Long], lcCols: Seq[String]) = try {
-          if (row.getAs[String]("data_source_format") == "DELTA") {
-            val ret: AnyRef = forTableMethod.invoke(null, spark,
+        val dataSourceFormat = row.getAs[String]("data_source_format")
+        val isTableDelta = dataSourceFormat == "DELTA"
+
+        val storagePath = row.getAs[String]("storage_path")
+        val files = ReadFileSystem().read(URI.create(storagePath))
+        val fullSize: Option[Long] = if (files.isEmpty) None else Option(files.map(_.size).sum)
+
+        val (snapshotSize: Option[Long], lcCols: Seq[String], deltaLogSize: Option[Long]) =
+          if (isTableDelta) {
+            val deltaLogSize = Option(
+              files
+              .filter(_.path.contains("/_delta_log"))
+              .map(_.size)
+              .sum
+            )
+            val (snapshotSize, lcCols) = DeltaMetadataUtils.forTable(
+              spark,
               TableIdentifier(
                 row.getAs[String]("table_name"),
                 Option(row.getAs[String]("table_schema")),
                 Option(row.getAs[String]("table_catalog"))
               )
             )
-            val snapshot = ret.getClass
-              .getMethod("snapshot")
-              .invoke(ret)
-            val size = Try(
-              snapshot.getClass
-                .getMethod("sizeInBytes")
-                .invoke(snapshot)
-                .asInstanceOf[Long]
-            )
-              .map(Option.apply)
-              .getOrElse(None)
-            val lcCols = Try(
-              extractLogicalNamesMethod
-                .invoke(clusteringColumnInfoClazz, snapshot)
-                .asInstanceOf[Seq[String]]
-            )
-              .getOrElse(Seq.empty[String])
-            (size, lcCols)
+            (snapshotSize, lcCols, deltaLogSize)
           } else {
-            (None, Seq.empty[String])
+            (None, Seq.empty, None)
           }
-        } catch {
-          case _: Throwable => (None, Seq.empty[String])
-        }
 
-        val storagePath = row.getAs[String]("storage_path")
-        val files = new MultiCloudFSReader().read(URI.create(storagePath))
-        val fullSize: Option[Long] = if (files.isEmpty) None else Option(files.map(_.size).sum)
-
+        val metadata = new GenericRowWithSchema(
+          Array(
+            deltaLogSize.map(_ / toGb).orNull,
+            deltaLogSize.orNull,
+          ),
+          metadataSchema)
         val data: Array[Any] = Array(
           row.getAs[String]("table_catalog"),
           row.getAs[String]("table_schema"),
           row.getAs[String]("table_name"),
           row.getAs[String]("table_type"),
-          storagePath, //"storage_path"
+          dataSourceFormat, // data_source_format
+          storagePath, // storage_path
           row.getAs[Timestamp]("created"),
           row.getAs[String]("created_by"),
-          lcCols, //"liquid_clustering_cols",
           row.getAs[String]("last_altered_by"),
           row.getAs[String]("last_altered"),
-          size.map(_ / Math.pow(10, 9)), //"size_in_gb"
-          size, //"size_in_bytes"
-          fullSize.map(_ / Math.pow(10, 9)), //"full_size_in_gb"
-          fullSize, //"full_size_in_bytes"
+          lcCols, // liquid_clustering_cols
+          snapshotSize.map(_ / toGb).orNull, // last_snapshot_size_in_gb
+          snapshotSize.orNull, // last_snapshot_size_in_bytes
+          fullSize.map(_ / toGb).orNull, // full_size_in_gb
+          fullSize.orNull, // full_size_in_bytes
+          metadata
         )
         new GenericRowWithSchema(data, schema)
       })
@@ -148,7 +146,7 @@ case class ShowTablesExtendedCommand(plainFiltersOpt: Option[String])
 
     if (hasError) {
       spark.createDataFrame(result.toList.asJava, schema)
-        .where(plainFilters)
+        .where(filters)
         .collect()
         .toSeq
     } else {

@@ -1,17 +1,8 @@
 package com.databricks.extensions.sql.utils
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Attribute, BinaryExpression, Expression, UnaryExpression}
 
 object CatalystUtils {
-
-  def parsePredicates(spark: SparkSession, predicates: Seq[String]): Seq[Expression] = predicates
-    .flatMap(parsePredicate(spark, _))
-
-  private def parsePredicate(spark: SparkSession, predicate: String): Seq[Expression] = spark
-    .sessionState
-    .sqlParser
-    .parseExpression(predicate) :: Nil
 
   private def unfoldExpressions(expr: Expression): Seq[Expression] = {
     val exprs = expr match {

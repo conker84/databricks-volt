@@ -27,7 +27,7 @@ def _deepCloneCatalog(
         replace: bool=False,
         ifNotExists: bool=False
     ) -> DataFrame:
-    catalog = self._sparkSession._jsparkSession.catalog
+    catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         self._sparkSession._jvm
         .com.databricks.extensions.apis.CatalogExtensions
@@ -62,7 +62,7 @@ def _deepCloneSchema(
         ifNotExists: bool=False
     ) -> DataFrame:
     jvm = self._sparkSession._jvm
-    catalog = self._sparkSession._jsparkSession.catalog
+    catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         jvm
         .com.databricks.extensions.apis.CatalogExtensions
@@ -80,7 +80,7 @@ def _shallowCloneSchema(
         ifNotExists: bool=False
     ) -> DataFrame:
     jvm = self._sparkSession._jvm
-    catalog = self._sparkSession._jsparkSession.catalog
+    catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         jvm
         .com.databricks.extensions.apis.CatalogExtensions
@@ -90,7 +90,7 @@ def _shallowCloneSchema(
 
 @add_method(Catalog)
 def _showTablesExtended(self, filter: str="") -> DataFrame:
-    catalog = self._sparkSession._jsparkSession.catalog
+    catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         self._sparkSession._jvm
         .com.databricks.extensions.apis.CatalogExtensions

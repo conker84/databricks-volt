@@ -25,6 +25,8 @@
         <mockito-core.version>4.4.0</mockito-core.version>
         <scalac-scapegoat.version>3.1.2</scalac-scapegoat.version>
         <mvn-scalafmt_2.12.version>1.1.1640084764.9f463a9</mvn-scalafmt_2.12.version>
+        <aws-sdk-s3.version>2.29.15</aws-sdk-s3.version>
+        <aws-sdk-http-auth-aws.version>2.29.15</aws-sdk-http-auth-aws.version>
     </properties>
 
     <dependencies>
@@ -49,6 +51,7 @@
 <!--            <scope>provided</scope>-->
         </dependency>
 
+        <!-- Azure deps -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-storage-file-datalake</artifactId>
@@ -80,11 +83,20 @@
             <scope>provided</scope>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.sksamuel.scapegoat</groupId>-->
-<!--            <artifactId>scalac-scapegoat-plugin_2.12.20</artifactId>-->
-<!--            <version>${scalac-scapegoat.version}</version>-->
-<!--        </dependency>-->
+        <!-- AWS deps -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-sdk-s3.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>http-auth-aws</artifactId>
+            <version>${aws-sdk-http-auth-aws.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
 
         <dependency>
             <groupId>org.scalatest</groupId>
@@ -104,9 +116,9 @@
         <resources>
             <resource>
                 <directory>python</directory>
-                <excludes>
-                    <exclude>**/test/**</exclude>
-                </excludes>
+                <includes>
+                    <include>**/extensions/**</include>
+                </includes>
             </resource>
         </resources>
         <!-- Add generated ANTLR sources to compile classpath -->

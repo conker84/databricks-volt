@@ -6,9 +6,9 @@ import com.databricks.extensions.sql.parser.SQLParserBaseParser.{CreateCatalogHe
 import com.databricks.extensions.sql.utils.AntlrUtils
 import org.antlr.v4.runtime.Token
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.functions
 
 import scala.jdk.CollectionConverters.asScalaBufferConverter
-import scala.util.{Failure, Success, Try}
 
 case class CloneHeaderMetadata(entity: Entity, create: Boolean, replace: Boolean, ifNotExists: Boolean)
 
@@ -82,8 +82,11 @@ class SQLParserBuilder extends SQLParserBaseBaseVisitor[AnyRef] {
   }
 
   override def visitShowTablesExtended(ctx: SQLParserBaseParser.ShowTablesExtendedContext): AnyRef = withOrigin(ctx) {
-    val stringFilter = Option(ctx.filters).map(AntlrUtils.extractRawText(_))
-    ShowTablesExtendedCommand(stringFilter)
+    val filter = Option(ctx.filters)
+      .map(AntlrUtils.extractRawText(_))
+      .map(functions.expr)
+      .getOrElse(ShowTablesExtendedCommand.filterStar)
+    ShowTablesExtendedCommand(filter)
   }
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = withOrigin(ctx) {

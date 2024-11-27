@@ -4,7 +4,7 @@ import com.databricks.extensions.sql.command.metadata.{CatalogIdentifier, Schema
 import com.databricks.extensions.sql.command.{CloneCatalogCommand, CloneSchemaCommand, ShowTablesExtendedCommand}
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.catalog.Catalog
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, DataFrame, SparkSession, functions}
 
 object CatalogExtensions {
   implicit class CatalogImplicits(catalog: Catalog) {
@@ -67,13 +67,9 @@ object CatalogExtensions {
         .runDF(spark)
     }
 
-    def showTablesExtended(filter: String): DataFrame = {
+    def showTablesExtended(filter: Column): DataFrame = {
       val spark = SparkSession.active
-      val innerFilter = if (StringUtils.isBlank(filter))
-        s"table_catalog = '${catalog.currentCatalog()}' AND table_schema = '${catalog.currentDatabase}'"
-      else
-        filter
-      ShowTablesExtendedCommand(Option(innerFilter)).runDF(spark)
+      ShowTablesExtendedCommand(filter).runDF(spark)
     }
   }
 
@@ -122,6 +118,18 @@ object CatalogExtensions {
   def showTablesExtended(
                           catalog: Catalog,
                           filter: String
+                        ): DataFrame = {
+    val innerFilter = if (StringUtils.isBlank(filter))
+      s"table_catalog = '${catalog.currentCatalog()}' AND table_schema = '${catalog.currentDatabase}'"
+    else
+      filter
+    CatalogImplicits(catalog)
+      .showTablesExtended(functions.expr(innerFilter))
+  }
+
+  def showTablesExtended(
+                          catalog: Catalog,
+                          filter: Column
                         ): DataFrame = CatalogImplicits(catalog)
     .showTablesExtended(filter)
 }

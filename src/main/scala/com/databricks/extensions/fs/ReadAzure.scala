@@ -8,7 +8,7 @@ import java.net.URI
 import scala.jdk.CollectionConverters.asScalaIteratorConverter
 
 
-class ReadAzure extends ReadFileSystem {
+private[fs] class ReadAzure extends ReadFileSystem {
 
   override def read(location: URI): Seq[SimpleFileInfo] = {
     val dbutils: DBUtils = DBUtils.getDBUtils()

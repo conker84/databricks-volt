@@ -5,42 +5,24 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.databricks</groupId>
-    <artifactId>extensions-azure-deps</artifactId>
+    <artifactId>extensions-aws-deps</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <azure-identity.version>1.14.1</azure-identity.version>
-        <azure-core.version>1.54.0</azure-core.version>
-        <azure-storage-file-datalake.version>12.21.0</azure-storage-file-datalake.version>
+        <aws-sdk-s3.version>2.29.15</aws-sdk-s3.version>
+        <aws-sdk-http-auth-aws.version>2.29.15</aws-sdk-http-auth-aws.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-storage-file-datalake</artifactId>
-            <version>${azure-storage-file-datalake.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-core-http-netty</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws-sdk-s3.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-identity</artifactId>
-            <version>${azure-identity.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.azure</groupId>
-                    <artifactId>azure-core-http-netty</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.azure</groupId>
-            <artifactId>azure-core-http-okhttp</artifactId>
-            <version>1.12.5</version>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>http-auth-aws</artifactId>
+            <version>${aws-sdk-http-auth-aws.version}</version>
         </dependency>
     </dependencies>
 
