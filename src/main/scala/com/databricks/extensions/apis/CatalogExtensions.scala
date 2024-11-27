@@ -71,6 +71,15 @@ object CatalogExtensions {
       val spark = SparkSession.active
       ShowTablesExtendedCommand(filter).runDF(spark)
     }
+
+    def showTablesExtended(filter: String): DataFrame = {
+      val innerFilter = if (StringUtils.isBlank(filter))
+        s"table_catalog = '${catalog.currentCatalog()}' AND table_schema = '${catalog.currentDatabase}'"
+      else
+        filter
+      CatalogImplicits(catalog)
+        .showTablesExtended(functions.expr(innerFilter))
+    }
   }
 
   // Necessary Python bindings
@@ -118,14 +127,8 @@ object CatalogExtensions {
   def showTablesExtended(
                           catalog: Catalog,
                           filter: String
-                        ): DataFrame = {
-    val innerFilter = if (StringUtils.isBlank(filter))
-      s"table_catalog = '${catalog.currentCatalog()}' AND table_schema = '${catalog.currentDatabase}'"
-    else
-      filter
-    CatalogImplicits(catalog)
-      .showTablesExtended(functions.expr(innerFilter))
-  }
+                        ): DataFrame = CatalogImplicits(catalog)
+    .showTablesExtended(filter)
 
   def showTablesExtended(
                           catalog: Catalog,
