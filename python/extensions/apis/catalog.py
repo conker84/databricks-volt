@@ -1,6 +1,6 @@
 from pyspark.sql.catalog import Catalog
-from pyspark.sql import DataFrame
-from typing import Optional
+from pyspark.sql import DataFrame, Column
+from typing import Optional, Union
 from py4j.java_gateway import JVMView
 
 from extensions.utils.decorators import add_method
@@ -89,8 +89,10 @@ def _shallowCloneSchema(
     return DataFrame(jdf, self._sparkSession)
 
 @add_method(Catalog)
-def _showTablesExtended(self, filter: str="") -> DataFrame:
+def _showTablesExtended(self, filter: Union[str, Column]) -> DataFrame:
     catalog = self._sparkSession._jsparkSession.catalog()
+    if isinstance(filter, Column):
+        filter = filter._jc
     jdf = (
         self._sparkSession._jvm
         .com.databricks.extensions.apis.CatalogExtensions

@@ -19,7 +19,7 @@ object CatalogExtensions {
       val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
-      CloneCatalogCommand("DEEP", currentCatalogIdentifier, targetCatalogIdentifier, managedLocation,
+      CloneCatalogCommand("DEEP", targetCatalogIdentifier, currentCatalogIdentifier, managedLocation,
         create, replace, ifNotExists)
         .runDF(spark)
     }
@@ -34,7 +34,7 @@ object CatalogExtensions {
       val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
-      CloneCatalogCommand("SHALLOW", currentCatalogIdentifier, targetCatalogIdentifier, managedLocation,
+      CloneCatalogCommand("SHALLOW", targetCatalogIdentifier, currentCatalogIdentifier, managedLocation,
         create, replace, ifNotExists)
         .runDF(spark)
     }
@@ -48,7 +48,7 @@ object CatalogExtensions {
                        ): DataFrame = {
       val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
-      CloneSchemaCommand("DEEP", currentSchema, targetSchema, managedLocation,
+      CloneSchemaCommand("DEEP", targetSchema, currentSchema, managedLocation,
         create, replace, ifNotExists)
         .runDF(spark)
     }
@@ -62,7 +62,7 @@ object CatalogExtensions {
                           ): DataFrame = {
       val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
-      CloneSchemaCommand("SHALLOW", currentSchema, targetSchema, managedLocation,
+      CloneSchemaCommand("SHALLOW", targetSchema, currentSchema, managedLocation,
         create, replace, ifNotExists)
         .runDF(spark)
     }

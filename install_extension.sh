@@ -17,6 +17,13 @@ if [ -d "$VOLUME_PATH" ]; then
   else
     echo "File does not exist: $FILE_PATH"
   fi
+  AWS_FILE_PATH="$VOLUME_PATH/extensions-aws-deps-1.0.0-SNAPSHOT-jar-with-dependencies.jar"
+  if [ -f "AWS_FILE_PATH" ]; then
+    echo "Copying file $AWS_FILE_PATH to /databricks/jars"
+    cp $AWS_FILE_PATH /databricks/jars/
+  else
+    echo "File does not exist: $AWS_FILE_PATH"
+  fi
 else
   echo "Volume path does not exist: $VOLUME_PATH"
 fi
