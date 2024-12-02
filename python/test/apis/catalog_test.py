@@ -2,7 +2,7 @@ from unittest import TestCase
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.catalog import Catalog
 from unittest.mock import patch
-from extensions.apis import *
+from volt.apis import *
 
 class CatalogTest(TestCase):
     spark = SparkSession.builder.appName('Test').getOrCreate()

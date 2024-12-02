@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.databricks</groupId>
-    <artifactId>extensions-azure-deps</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <artifactId>volt-azure-deps</artifactId>
+    <version>1.0.0</version>
 
     <properties>
         <azure-identity.version>1.14.1</azure-identity.version>

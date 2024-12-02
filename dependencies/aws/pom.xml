@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.databricks</groupId>
-    <artifactId>extensions-aws-deps</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <artifactId>volt-aws-deps</artifactId>
+    <version>1.0.0</version>
 
     <properties>
         <aws-sdk-s3.version>2.29.15</aws-sdk-s3.version>
