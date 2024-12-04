@@ -68,6 +68,10 @@ Moreover you need to define a secret scope `adls-sp-credentials` and add the fol
 - `client_id`: is the **AZURE SP client ID**
 - `client_secret`: is the **AZURE SP client secret**
 
+## Help us grow
+
+If you need a feature please let us know filling an issue. We're glad to help you.
+
 ## Clone Catalog/Schemas
 
 Volt provides an easy way, to deep/shallow clone catalog and schemas.
