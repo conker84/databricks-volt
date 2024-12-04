@@ -1,5 +1,5 @@
 # Volt
-Volt is library that aims to simplify the life of Data Engineers.
+Volt is library that aims to simplify the life of Data Engineers within the Databricks environment.
 
 **Nota Bene**: The development is mainly driven by Databricks field engineering. However, the library is not an official product of Databricks.
 

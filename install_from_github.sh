@@ -20,9 +20,6 @@ download_and_copy_jar() {
 
 echo "[VOLT] Starting file downloads and copies to /databricks/jars"
 
-echo -en "\nspark.sql.extensions com.databricks.volt.sql.SQLExtensions\n" >> /databricks/spark/conf/spark-defaults.conf
-EOL
-
 download_and_copy_jar "volt-$VOLT_VERSION.jar"
 download_and_copy_jar "volt-aws-deps-$VOLT_VERSION.jar"
 download_and_copy_jar "volt-azure-deps-$VOLT_VERSION.jar"
