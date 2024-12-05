@@ -18,7 +18,7 @@ Another important limitation is that we cannot reuse stored credentials so you n
 
 ## How to install it
 
-For start you this file:
+First you need this file:
 - `volt-1.0.0.jar`
 
 Then, if required you can also get these files:
