@@ -1,11 +1,11 @@
 package com.databricks.volt.sql.command
 
 import com.databricks.volt.fs.ReadFileSystem
-import com.databricks.volt.sql.command.ShowTablesExtendedCommand.{filterStar, sizeSchema, nonPushableCols, selectColNames, toGb, schema}
+import com.databricks.volt.sql.command.ShowTablesExtendedCommand.{filterStar, nonPushableCols, schema, selectColNames, sizeSchema, toGb}
 import com.databricks.volt.sql.utils.DeltaMetadataUtils
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
-import org.apache.spark.sql.types.{ArrayType, DoubleType, LongType, StringType, StructType, TimestampType}
+import org.apache.spark.sql.types.{ArrayType, DoubleType, LongType, MapType, StringType, StructType, TimestampType}
 import org.apache.spark.sql.{Column, Row, SparkSession, functions}
 
 import java.net.URI
@@ -32,6 +32,7 @@ object ShowTablesExtendedCommand {
     .add("last_altered_by", StringType)
     .add("last_altered", TimestampType)
     .add("liquid_clustering_cols", ArrayType(StringType))
+    .add("properties", MapType.apply(StringType, StringType))
     .add("size", sizeSchema)
 
   private val toGb = Math.pow(10, 9)
@@ -89,7 +90,12 @@ case class ShowTablesExtendedCommand(filters: Column)
         val files = ReadFileSystem().read(URI.create(storagePath))
         val fullSize: Option[Long] = if (files.isEmpty) None else Option(files.map(_.size).sum)
 
-        val (snapshotSize: Option[Long], lcCols: Seq[String], deltaLogSize: Option[Long]) =
+        val (
+          snapshotSize: Option[Long],
+          lcCols: Seq[String],
+          deltaLogSize: Option[Long],
+          props: Map[String, String]
+          ) =
           if (isTableDelta) {
             val deltaLogSize = Option(
               files
@@ -97,7 +103,7 @@ case class ShowTablesExtendedCommand(filters: Column)
               .map(_.size)
               .sum
             )
-            val (snapshotSize, lcCols) = DeltaMetadataUtils.forTable(
+            val (snapshotSize, lcCols, props) = DeltaMetadataUtils.forTable(
               spark,
               TableIdentifier(
                 row.getAs[String]("table_name"),
@@ -105,9 +111,9 @@ case class ShowTablesExtendedCommand(filters: Column)
                 Option(row.getAs[String]("table_catalog"))
               )
             )
-            (snapshotSize, lcCols, deltaLogSize)
+            (snapshotSize, lcCols, deltaLogSize, props)
           } else {
-            (None, Seq.empty, None)
+            (None, Seq.empty, None, Map.empty)
           }
 
         val size = new GenericRowWithSchema(
@@ -132,6 +138,7 @@ case class ShowTablesExtendedCommand(filters: Column)
           row.getAs[String]("last_altered_by"),
           row.getAs[String]("last_altered"),
           lcCols, // liquid_clustering_cols
+          props, // properties
           size
         )
         new GenericRowWithSchema(data, schema)

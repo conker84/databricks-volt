@@ -4,28 +4,25 @@ import com.databricks.volt.sql.parser.ReflectionUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
+import java.lang.reflect.Method
 import scala.util.Try
 
 object DeltaMetadataUtils {
   // TODO move this to method handles
-  // and add a proper validation for class not present
-  private val deltaLogClazz = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.DeltaLog")
-  private val clusteringColumnInfoClazz = ReflectionUtils.forName("com.databricks.sql.io.skipping.liquid.ClusteringColumnInfo")
-  private val snapshotClazz = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.Snapshot")
-  private val forTableMethod = if (deltaLogClazz != null)
-    deltaLogClazz.getMethod("forTable", classOf[SparkSession], classOf[TableIdentifier])
-  else
-    null
-  private val extractLogicalNamesMethod = if (clusteringColumnInfoClazz != null)
-    clusteringColumnInfoClazz.getMethod("extractLogicalNames", snapshotClazz)
-  else
-    null
+  private val deltaLogClazz: Try[Class[_]] = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.DeltaLog")
+  private val clusteringColumnInfoClazz: Try[Class[_]] = ReflectionUtils.forName("com.databricks.sql.io.skipping.liquid.ClusteringColumnInfo")
+  private val snapshotClazz: Try[Class[_]] = ReflectionUtils.forName("com.databricks.sql.transaction.tahoe.Snapshot")
+  private val forTableMethod: Try[Method] = deltaLogClazz
+    .map(_.getMethod("forTable", classOf[SparkSession], classOf[TableIdentifier]))
+  private val extractLogicalNamesMethod: Try[Method] = clusteringColumnInfoClazz
+    .flatMap(ccIc => snapshotClazz.map(sc => ccIc.getMethod("extractLogicalNames", sc)))
 
+  // TODO return a proper error if libraries are not present
   def forTable(
                 spark: SparkSession,
                 table: TableIdentifier
-              ): (Option[Long], Seq[String]) = Try(forTableMethod
-    .invoke(null, spark, table))
+              ): (Option[Long], Seq[String], Map[String, String]) = forTableMethod
+    .map(_.invoke(null, spark, table))
     .map(ret => ret.getClass
       .getMethod("snapshot")
       .invoke(ret))
@@ -35,10 +32,16 @@ object DeltaMetadataUtils {
         .invoke(snapshot)
         .asInstanceOf[Long]
       val lcCols = extractLogicalNamesMethod
-        .invoke(clusteringColumnInfoClazz, snapshot)
-        .asInstanceOf[Seq[String]]
-      (Option(size), lcCols)
+        .map(_.invoke(clusteringColumnInfoClazz, snapshot)
+          .asInstanceOf[Seq[String]])
+        .getOrElse(Seq.empty[String])
+      val props = snapshot.getClass
+        .getMethod("getProperties")
+        .invoke(snapshot)
+        .asInstanceOf[scala.collection.mutable.Map[String, String]]
+        .toMap
+      (Option(size), lcCols, props)
     })
-    .getOrElse((None, Seq.empty[String]))
+    .getOrElse((None, Seq.empty[String], Map.empty[String, String]))
 
 }

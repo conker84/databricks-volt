@@ -66,6 +66,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     first.getAs[String]("table_catalog") shouldBe "catalog1"
     first.getAs[String]("table_schema") shouldBe "schema1"
     first.getAs[String]("table_name") shouldBe "table1"
+    first.getAs[Map[String, String]]("properties") shouldBe Map.empty
     val row: Row = first.getAs[Row]("size")
     row.getAs[java.lang.Double]("delta_log_size_in_gb") shouldBe null
     row.getAs[java.lang.Long]("delta_log_size_in_bytes") shouldBe null

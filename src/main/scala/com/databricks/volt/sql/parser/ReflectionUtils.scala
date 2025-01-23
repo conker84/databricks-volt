@@ -1,21 +1,12 @@
 package com.databricks.volt.sql.parser
 
-import scala.annotation.tailrec
+import scala.util.Try
 
 object ReflectionUtils {
 
-  @tailrec
-  def forName(className: String*): Class[_] = try {
-    if (className.isEmpty) return null
-    Class.forName(className(0))
-  } catch {
-    case cfe: ClassNotFoundException =>
-      val list = className.drop(1)
-      if (list.nonEmpty) {
-        forName(list: _*)
-      } else {
-        null
-      }
-  }
+  @SuppressWarnings(Array("UnsafeTraversableMethods"))
+  def forName(className: String*): Try[Class[_]] = className
+    .map(s => Try[Class[_]](Class.forName(s)))
+    .reduce((a ,b) => a.orElse(b))
 
 }
