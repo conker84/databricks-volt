@@ -19,11 +19,11 @@ Another important limitation is that we cannot reuse stored credentials so you n
 ## How to install it
 
 First you need this file:
-- `volt-1.0.0.jar`
+- `volt-<major.minor.patch>.jar`
 
 Then, if required you can also get these files:
-- `volt-aws-deps-1.0.0.jar`
-- `volt-azure-deps-1.0.0.jar`
+- `volt-aws-deps-<major.minor.patch>.jar`
+- `volt-azure-deps-<major.minor.patch>.jar`
 
 In order to install all the required dependencies you can choose between two init scripts:
 - `install_from_volume.sh` which will install the dependencies from the volume
@@ -50,7 +50,7 @@ If you choose `install_from_github.sh` you will need to define one environment v
 
 If you want support for reading files from S3 you need to install also:
 
-- `volt-aws-deps-1.0.0.jar`
+- `volt-aws-deps-<major.minor.patch>.jar`
 
 Moreover you need to define a secret scope `aws-s3-credentials` and add the following keys with the relative values:
 - `client_id`: is the **AWS access key ID**
@@ -61,7 +61,7 @@ Moreover you need to define a secret scope `aws-s3-credentials` and add the foll
 
 If you want support for reading files from ADLS you need to install also:
 
-- `volt-auzre-deps-1.0.0.jar`
+- `volt-auzre-deps-<major.minor.patch>.jar`
 
 Moreover you need to define a secret scope `adls-sp-credentials` and add the following keys with the relative values:
 - `tenant_id`: is the **AZURE SP tenant ID**
