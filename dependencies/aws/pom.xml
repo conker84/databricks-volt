@@ -6,7 +6,7 @@
 
     <groupId>com.databricks</groupId>
     <artifactId>volt-aws-deps</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <properties>
         <aws-sdk-s3.version>2.29.15</aws-sdk-s3.version>
