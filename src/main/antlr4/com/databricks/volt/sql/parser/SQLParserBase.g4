@@ -1,5 +1,29 @@
 grammar SQLParserBase;
 
+@members {
+  /**
+   * Verify whether current token is a valid decimal token (which contains dot).
+   * Returns true if the character that follows the token is not a digit or letter or underscore.
+   *
+   * For example:
+   * For char stream "2.3", "2." is not a valid decimal token, because it is followed by digit '3'.
+   * For char stream "2.3_", "2.3" is not a valid decimal token, because it is followed by '_'.
+   * For char stream "2.3W", "2.3" is not a valid decimal token, because it is followed by 'W'.
+   * For char stream "12.0D 34.E2+0.12 "  12.0D is a valid decimal token because it is folllowed
+   * by a space. 34.E2 is a valid decimal token because it is followed by symbol '+'
+   * which is not a digit or letter or underscore.
+   */
+  public boolean isValidDecimal() {
+    int nextChar = _input.LA(1);
+    if (nextChar >= 'A' && nextChar <= 'Z' || nextChar >= '0' && nextChar <= '9' ||
+      nextChar == '_') {
+      return false;
+    } else {
+      return true;
+    }
+  }
+}
+
 tokens {
     DELIMITER
 }
@@ -11,11 +35,14 @@ singleStatement
 // If you add keywords here that should not be reserved, add them to 'nonReserved' list.
 statement
     : SHOW TABLES EXTENDED
-        (WHERE filters=predicateToken)?                                          #showTablesExtended
-    | cloneCatalogHeader (DEEP|SHALLOW) CLONE source=qualifiedName
+        (WHERE filters=predicateToken)?                                         #showTablesExtended
+    | cloneCatalogHeader (FULL)? (DEEP|SHALLOW) CLONE source=qualifiedName
        (MANAGED LOCATION location=stringLit)?                                   #cloneCatalog
-    | cloneSchemaHeader (DEEP|SHALLOW) CLONE source=qualifiedName
+    | cloneSchemaHeader (FULL)? (DEEP|SHALLOW) CLONE source=qualifiedName
        (MANAGED LOCATION location=stringLit)?                                   #cloneSchema
+    | cloneTableHeader FULL (DEEP|SHALLOW) CLONE source=qualifiedName
+       (TBLPROPERTIES tableProps=propertyList)?
+       (LOCATION location=stringLit)?                                           #cloneTableFull
     | .*?                                                                       #passThrough
     ;
 
@@ -23,41 +50,68 @@ createCatalogHeader
     : CREATE CATALOG (IF NOT EXISTS)? catalog=qualifiedName
     ;
 
-replaceCatalogHeader
-    : (CREATE OR)? REPLACE CATALOG catalog=qualifiedName
-    ;
-
 cloneCatalogHeader
     : createCatalogHeader
-    | replaceCatalogHeader
     ;
 
 createSchemaHeader
     : CREATE SCHEMA (IF NOT EXISTS)? schema=qualifiedName
     ;
 
-replaceSchemaHeader
-    : (CREATE OR)? REPLACE SCHEMA schema=qualifiedName
-    ;
-
 cloneSchemaHeader
     : createSchemaHeader
-    | replaceSchemaHeader
+    ;
+
+createTableHeader
+    : CREATE TABLE (IF NOT EXISTS)? schema=qualifiedName
+    ;
+
+replaceTableHeader
+    : (CREATE OR)? REPLACE TABLE schema=qualifiedName
+    ;
+
+cloneTableHeader
+    : createSchemaHeader
     ;
 
 qualifiedName
     : identifier ('.' identifier)*
     ;
 
-stringLit
-    : STRING
-    | DOUBLEQUOTED_STRING
-    ;
-
 identifier
     : IDENTIFIER             #unquotedIdentifier
     | quotedIdentifier       #quotedIdentifierAlternative
     | nonReserved            #unquotedIdentifier
+    ;
+
+propertyList
+    : LEFT_PAREN property (COMMA property)* RIGHT_PAREN
+    ;
+
+property
+    : key=propertyKey (EQ? value=propertyValue)?
+    ;
+
+propertyKey
+    : identifier (DOT identifier)*
+    | stringLit
+    ;
+
+propertyValue
+    : INTEGER_VALUE
+    | DECIMAL_VALUE
+    | booleanValue
+    | identifier LEFT_PAREN stringLit COMMA stringLit RIGHT_PAREN
+    | value=stringLit
+    ;
+
+booleanValue
+    : TRUE | FALSE
+    ;
+
+stringLit
+    : STRING
+    | DOUBLEQUOTED_STRING
     ;
 
 quotedIdentifier
@@ -99,6 +153,14 @@ EXISTS: 'EXISTS';
 REPLACE: 'REPLACE';
 SCHEMA: 'SCHEMA';
 IN: 'IN';
+FULL: 'FULL';
+TRUE: 'TRUE';
+FALSE: 'FALSE';
+TBLPROPERTIES: 'TBLPROPERTIES';
+LEFT_PAREN: '(';
+RIGHT_PAREN: ')';
+COMMA: ',';
+DOT: '.';
 
 // Multi-character operator tokens need to be defined even though we don't explicitly reference
 // them so that they can be recognized as single tokens when parsing. If we split them up and
@@ -127,6 +189,24 @@ IDENTIFIER
 
 BACKQUOTED_IDENTIFIER
     : '`' ( ~'`' | '``' )* '`'
+    ;
+
+INTEGER_VALUE
+    : DIGIT+
+    ;
+
+DECIMAL_VALUE
+    : DIGIT+ EXPONENT
+    | DECIMAL_DIGITS EXPONENT? {isValidDecimal()}?
+    ;
+
+fragment DECIMAL_DIGITS
+    : DIGIT+ '.' DIGIT*
+    | '.' DIGIT+
+    ;
+
+fragment EXPONENT
+    : 'E' [+-]? DIGIT+
     ;
 
 fragment DIGIT

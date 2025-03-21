@@ -1,4 +1,4 @@
-package com.databricks.volt.sql.parser
+package com.databricks.volt.sql.utils
 
 import scala.util.Try
 

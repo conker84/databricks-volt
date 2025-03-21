@@ -1,19 +1,19 @@
 package com.databricks.volt.sql.command
 
 import com.databricks.volt.fs.ReadFileSystem
-import com.databricks.volt.sql.command.ShowTablesExtendedCommand.{filterStar, nonPushableCols, schema, selectColNames, sizeSchema, toGb}
-import com.databricks.volt.sql.utils.DeltaMetadataUtils
+import com.databricks.volt.sql.command.ShowTablesExtendedCommand.{schema, selectColNames, sizeSchema, toGb}
+import com.databricks.volt.sql.utils.DeltaMetadata
+import com.databricks.volt.sql.utils.SQLUtils.{createRowWithSchema, filterDeltaTables}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.{ArrayType, DoubleType, LongType, MapType, StringType, StructType, TimestampType}
 import org.apache.spark.sql.{Column, Row, SparkSession, functions}
 
 import java.net.URI
 import java.sql.Timestamp
-import scala.jdk.CollectionConverters.{asScalaIteratorConverter, seqAsJavaListConverter}
+import scala.jdk.CollectionConverters.asScalaIteratorConverter
 
 object ShowTablesExtendedCommand {
-  private val sizeSchema: StructType = new StructType()
+  private[command] val sizeSchema: StructType = new StructType()
     .add("full_size_in_gb", DoubleType)
     .add("full_size_in_bytes", LongType)
     .add("last_snapshot_size_in_gb", DoubleType)
@@ -48,28 +48,18 @@ object ShowTablesExtendedCommand {
     .map(_.name)
     .map(functions.col)
 
-  val filterStar: Column = functions.col("*")
 }
 
 case class ShowTablesExtendedCommand(filters: Column)
   extends BaseCommand(schema)  {
 
   override def run(spark: SparkSession): Seq[Row] = {
-    val baseDf = spark.sql(
-        """
-          |SELECT *
-          |FROM system.information_schema.tables
-          |WHERE table_type NOT IN ('VIEW', 'FOREIGN')
-          |AND table_schema <> 'information_schema'
-          |AND table_catalog NOT IN ('system', '__databricks_internal')
-          |AND data_source_format NOT IN ('UNKNOWN_DATA_SOURCE_FORMAT', 'DELTASHARING')
-          |""".stripMargin)
+    val baseDf = spark.sql(filterDeltaTables)
       .select(selectColNames :_*)
 
     val list: java.util.List[Row] = try {
-      baseDf
-        .where(filters)
-        .collectAsList()
+      val df = if (filters == null) baseDf else baseDf.where(filters)
+      df.collectAsList()
     } catch {
       case _: Throwable =>
         throw new IllegalArgumentException(
@@ -113,7 +103,7 @@ case class ShowTablesExtendedCommand(filters: Column)
               .map(_.size)
               .sum
           )
-          val (snapshotSize, lcCols, props) = DeltaMetadataUtils.forTable(
+          val metadata = DeltaMetadata.forTable(
             spark,
             TableIdentifier(
               row.getAs[String]("table_name"),
@@ -121,22 +111,22 @@ case class ShowTablesExtendedCommand(filters: Column)
               Option(row.getAs[String]("table_catalog"))
             )
           )
-          (snapshotSize, lcCols, deltaLogSize, props)
+          (metadata.snapshotSize, metadata.lcCols, deltaLogSize, metadata.props)
         } else {
           (None, Seq.empty, None, Map.empty)
         }
 
-      val size = new GenericRowWithSchema(
-        Array(
-          fullSize.map(_ / toGb).orNull, // full_size_in_gb
-          fullSize.orNull, // full_size_in_bytes
-          snapshotSize.map(_ / toGb).orNull, // last_snapshot_size_in_gb
-          snapshotSize.orNull, // last_snapshot_size_in_bytes
-          deltaLogSize.map(_ / toGb).orNull, // delta_log_size_in_gb
-          deltaLogSize.orNull, // delta_log_size_in_bytes
-        ),
-        sizeSchema)
-      val data: Array[Any] = Array(
+      val size = createRowWithSchema(
+        sizeSchema,
+        fullSize.map(_ / toGb).orNull, // full_size_in_gb
+        fullSize.orNull, // full_size_in_bytes
+        snapshotSize.map(_ / toGb).orNull, // last_snapshot_size_in_gb
+        snapshotSize.orNull, // last_snapshot_size_in_bytes
+        deltaLogSize.map(_ / toGb).orNull, // delta_log_size_in_gb
+        deltaLogSize.orNull // delta_log_size_in_bytes
+      )
+      createRowWithSchema(
+        schema,
         row.getAs[String]("table_catalog"),
         row.getAs[String]("table_schema"),
         row.getAs[String]("table_name"),
@@ -151,7 +141,6 @@ case class ShowTablesExtendedCommand(filters: Column)
         props, // properties
         size
       )
-      new GenericRowWithSchema(data, schema)
     } catch {
       case ie: InterruptedException => {
         Thread.currentThread().interrupt()

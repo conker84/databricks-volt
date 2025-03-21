@@ -23,15 +23,14 @@ def _deepCloneCatalog(
         self,
         targetCatalog: str,
         managedLocation: str="",
-        create: bool=True,
-        replace: bool=False,
-        ifNotExists: bool=False
+        ifNotExists: bool=False,
+        isFull: bool=False
     ) -> DataFrame:
     catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         self._sparkSession._jvm
         .com.databricks.volt.apis.CatalogExtensions
-        .deepCloneCatalog(catalog, targetCatalog, managedLocation, create, replace, ifNotExists)
+        .deepCloneCatalog(catalog, targetCatalog, managedLocation, ifNotExists, isFull)
     )
     return DataFrame(jdf, self._sparkSession)
 
@@ -40,15 +39,14 @@ def _shallowCloneCatalog(
         self,
         targetCatalog: str,
         managedLocation: str="",
-        create: bool=True,
-        replace: bool=False,
-        ifNotExists: bool=False
+        ifNotExists: bool=False,
+        isFull: bool=False
     ) -> DataFrame:
     catalog = self._sparkSession._jsparkSession.catalog
     jdf = (
         self._sparkSession._jvm
         .com.databricks.volt.apis.CatalogExtensions
-        .shallowCloneCatalog(catalog, targetCatalog, managedLocation, create, replace, ifNotExists)
+        .shallowCloneCatalog(catalog, targetCatalog, managedLocation, ifNotExists, isFull)
     )
     return DataFrame(jdf, self._sparkSession)
 
@@ -57,16 +55,15 @@ def _deepCloneSchema(
         self,
         targetSchema: SchemaIdentifier,
         managedLocation: str="",
-        create: bool=True,
-        replace: bool=False,
-        ifNotExists: bool=False
+        ifNotExists: bool=False,
+        isFull: bool=False
     ) -> DataFrame:
     jvm = self._sparkSession._jvm
     catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         jvm
         .com.databricks.volt.apis.CatalogExtensions
-        .deepCloneSchema(catalog, targetSchema.to_jvm(jvm), managedLocation, create, replace, ifNotExists)
+        .deepCloneSchema(catalog, targetSchema.to_jvm(jvm), managedLocation, ifNotExists, isFull)
     )
     return DataFrame(jdf, self._sparkSession)
 
@@ -75,16 +72,15 @@ def _shallowCloneSchema(
         self,
         targetSchema: SchemaIdentifier,
         managedLocation: str="",
-        create: bool=True,
-        replace: bool=False,
-        ifNotExists: bool=False
+        ifNotExists: bool=False,
+        isFull: bool=False
     ) -> DataFrame:
     jvm = self._sparkSession._jvm
     catalog = self._sparkSession._jsparkSession.catalog()
     jdf = (
         jvm
         .com.databricks.volt.apis.CatalogExtensions
-        .shallowCloneSchema(catalog, targetSchema.to_jvm(jvm), managedLocation, create, replace, ifNotExists)
+        .shallowCloneSchema(catalog, targetSchema.to_jvm(jvm), managedLocation, ifNotExists, isFull)
     )
     return DataFrame(jdf, self._sparkSession)
 

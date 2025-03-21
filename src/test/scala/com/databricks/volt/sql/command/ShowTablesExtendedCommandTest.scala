@@ -1,5 +1,6 @@
 package com.databricks.volt.sql.command
 
+import com.databricks.volt.sql.utils.SQLUtils
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
@@ -14,7 +15,6 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
 
   private var spark: SparkSession = _
 
-  private val schema = ShowTablesExtendedCommand.schema
 
   override def beforeEach(): Unit =
     spark = mock(classOf[SparkSession])
@@ -22,32 +22,30 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
   test("run command with mock SparkSession using GenericRowWithSchema") {
     // Construct mock data using GenericRowWithSchema
     val mockData: java.util.List[Row] = Collections.singletonList(
-      new org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema(
-        Array(
-          "catalog1", // table_catalog
-          "schema1", // table_schema
-          "table1", // table_name
-          "MANAGED", // table_type
-          "CSV", // data_source_format
-          "/path/to/storage1", // storage_path
-          Timestamp.valueOf("2024-01-01 12:00:00"), // created
-          "user1", // created_by
-          Array("col1"), // liquid_clustering_cols
-          "user2", // last_altered_by
-          Timestamp.valueOf("2024-01-02 12:00:00"), // last_altered
-          null, // size_in_gb
-          null, // size_in_bytes
-          null, // full_size_in_gb
-          null, // full_size_in_bytes
-          null
-        ),
-        schema
+      SQLUtils.createRowWithSchema(
+        ShowTablesExtendedCommand.schema,
+        "catalog1", // table_catalog
+        "schema1", // table_schema
+        "table1", // table_name
+        "MANAGED", // table_type
+        "CSV", // data_source_format
+        "/path/to/storage1", // storage_path
+        Timestamp.valueOf("2024-01-01 12:00:00"), // created
+        "user1", // created_by
+        "user2", // last_altered_by
+        Timestamp.valueOf("2024-01-02 12:00:00"), // last_altered
+        Array("col1"), // liquid_clustering_cols
+        Map.empty[String, String], // properties,
+        SQLUtils.createRowWithSchema(
+          ShowTablesExtendedCommand.sizeSchema,
+          null, null, null, null, null, null
+        )
       )
     )
 
     // Mock Dataset[Row] and its collectAsList behavior
     val mockDataset = mock(classOf[Dataset[Row]])
-    when(mockDataset.schema).thenReturn(schema)
+    when(mockDataset.schema).thenReturn(ShowTablesExtendedCommand.schema)
     when(mockDataset.select(any[Column])).thenReturn(mockDataset)
     when(mockDataset.collectAsList()).thenReturn(mockData)
 
@@ -55,7 +53,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     when(spark.sql(any[String])).thenReturn(mockDataset)
 
     // Instantiate the command
-    val command = ShowTablesExtendedCommand(ShowTablesExtendedCommand.filterStar)
+    val command = ShowTablesExtendedCommand(null)
 
     // Run the command
     val result = command.run(spark)
@@ -66,6 +64,7 @@ class ShowTablesExtendedCommandTest extends AnyFunSuite with Matchers with Befor
     first.getAs[String]("table_catalog") shouldBe "catalog1"
     first.getAs[String]("table_schema") shouldBe "schema1"
     first.getAs[String]("table_name") shouldBe "table1"
+    first.getAs[Map[String, String]]("liquid_clustering_cols") shouldBe Seq.empty
     first.getAs[Map[String, String]]("properties") shouldBe Map.empty
     val row: Row = first.getAs[Row]("size")
     row.getAs[java.lang.Double]("delta_log_size_in_gb") shouldBe null

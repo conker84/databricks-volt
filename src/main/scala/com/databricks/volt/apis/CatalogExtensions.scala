@@ -12,58 +12,54 @@ object CatalogExtensions {
     def deepCloneCatalog(
                           targetCatalog: String,
                           managedLocation: String = "",
-                          create: Boolean = true,
-                          replace: Boolean = false,
-                          ifNotExists: Boolean = false
+                          ifNotExists: Boolean = false,
+                          isFull: Boolean = false
                         ): DataFrame = {
       val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
       CloneCatalogCommand("DEEP", targetCatalogIdentifier, currentCatalogIdentifier, managedLocation,
-        create, replace, ifNotExists)
+        ifNotExists, isFull)
         .runDF(spark)
     }
 
     def shallowCloneCatalog(
                              targetCatalog: String,
                              managedLocation: String = "",
-                             create: Boolean = true,
-                             replace: Boolean = false,
-                             ifNotExists: Boolean = false
+                             ifNotExists: Boolean = false,
+                             isFull: Boolean = false
                            ): DataFrame = {
       val spark = SparkSession.active
       val currentCatalogIdentifier = CatalogIdentifier(catalog.currentCatalog())
       val targetCatalogIdentifier = CatalogIdentifier(targetCatalog)
       CloneCatalogCommand("SHALLOW", targetCatalogIdentifier, currentCatalogIdentifier, managedLocation,
-        create, replace, ifNotExists)
+        ifNotExists, isFull)
         .runDF(spark)
     }
 
     def deepCloneSchema(
                          targetSchema: SchemaIdentifier,
                          managedLocation: String = "",
-                         create: Boolean = true,
-                         replace: Boolean = false,
-                         ifNotExists: Boolean = false
+                         ifNotExists: Boolean = false,
+                         isFull: Boolean = false
                        ): DataFrame = {
       val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
       CloneSchemaCommand("DEEP", targetSchema, currentSchema, managedLocation,
-        create, replace, ifNotExists)
+        ifNotExists, isFull)
         .runDF(spark)
     }
 
     def shallowCloneSchema(
                             targetSchema: SchemaIdentifier,
                             managedLocation: String = "",
-                            create: Boolean = true,
-                            replace: Boolean = false,
-                            ifNotExists: Boolean = false
+                            ifNotExists: Boolean = false,
+                            isFull: Boolean = false
                           ): DataFrame = {
       val spark = SparkSession.active
       val currentSchema = SchemaIdentifier(catalog.currentDatabase, Option(catalog.currentCatalog()))
       CloneSchemaCommand("SHALLOW", targetSchema, currentSchema, managedLocation,
-        create, replace, ifNotExists)
+        ifNotExists, isFull)
         .runDF(spark)
     }
 
@@ -88,41 +84,37 @@ object CatalogExtensions {
                         catalog: Catalog,
                         targetCatalog: String,
                         managedLocation: String = "",
-                        create: Boolean = true,
-                        replace: Boolean = false,
-                        ifNotExists: Boolean = false
+                        ifNotExists: Boolean = false,
+                        isFull: Boolean
                       ): DataFrame = CatalogImplicits(catalog)
-    .deepCloneCatalog(targetCatalog, managedLocation, create, replace, ifNotExists)
+    .deepCloneCatalog(targetCatalog, managedLocation, ifNotExists, isFull)
 
   def shallowCloneCatalog(
                            catalog: Catalog,
                            targetCatalog: String,
                            managedLocation: String = "",
-                           create: Boolean = true,
-                           replace: Boolean = false,
-                           ifNotExists: Boolean = false
+                           ifNotExists: Boolean = false,
+                           isFull: Boolean = false
                          ): DataFrame = CatalogImplicits(catalog)
-    .shallowCloneCatalog(targetCatalog, managedLocation, create, replace, ifNotExists)
+    .shallowCloneCatalog(targetCatalog, managedLocation, ifNotExists, isFull)
 
   def deepCloneSchema(
                        catalog: Catalog,
                        targetSchema: SchemaIdentifier,
                        managedLocation: String = "",
-                       create: Boolean = true,
-                       replace: Boolean = false,
-                       ifNotExists: Boolean = false
+                       ifNotExists: Boolean = false,
+                       isFull: Boolean = false
                      ): DataFrame = CatalogImplicits(catalog)
-    .deepCloneSchema(targetSchema, managedLocation, create, replace, ifNotExists)
+    .deepCloneSchema(targetSchema, managedLocation, ifNotExists, isFull)
 
   def shallowCloneSchema(
                           catalog: Catalog,
                           targetSchema: SchemaIdentifier,
                           managedLocation: String = "",
-                          create: Boolean = true,
-                          replace: Boolean = false,
-                          ifNotExists: Boolean = false
+                          ifNotExists: Boolean = false,
+                          isFull: Boolean = false
                         ): DataFrame = CatalogImplicits(catalog)
-    .shallowCloneSchema(targetSchema, managedLocation, create, replace, ifNotExists)
+    .shallowCloneSchema(targetSchema, managedLocation, ifNotExists, isFull)
 
   def showTablesExtended(
                           catalog: Catalog,

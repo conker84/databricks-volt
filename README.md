@@ -83,7 +83,7 @@ The execution of the command will return a report table with the following field
 - `table_schema` (StringType)
 - `table_name` (StringType)
 - `status` (StringType): it's OK/ERROR
-- `status_message` (StringType) in case of status ERROR you can get the error message here
+- `status_messages` (ArrayType(StringType)) in case of status ERROR you can get the error message here
 
 ### SQL API
 
