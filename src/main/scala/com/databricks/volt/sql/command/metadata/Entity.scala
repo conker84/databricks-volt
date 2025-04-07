@@ -10,7 +10,10 @@ case class TableIdentifier(table: String, schema: Option[String] = None, catalog
     .flatMap(schTbl => catalog.map(cat => s"$cat.$schTbl"))
     .getOrElse(table)
 
-  override def toEscapedString: String = catalog.map(cat => s"`$cat`.`$schema`").getOrElse(s"`$schema`")
+  override def toEscapedString: String = schema
+    .map(sch => s"`$sch`.`$table`")
+    .flatMap(schTbl => catalog.map(cat => s"`$cat`.$schTbl"))
+    .getOrElse(s"`$table`")
 }
 
 case class SchemaIdentifier(schema: String, catalog: Option[String] = None) extends Entity {
