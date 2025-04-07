@@ -1,7 +1,7 @@
 package com.databricks.volt.sql.parser
 
 import com.databricks.volt.sql.command.metadata.{CatalogIdentifier, Entity, SchemaIdentifier, TableIdentifier}
-import com.databricks.volt.sql.command.{CloneCatalogCommand, CloneSchemaCommand, CloneTableFullCommand, ShowTablesExtendedCommand}
+import com.databricks.volt.sql.command.{CloneCatalogCommand, CloneSchemaCommand, CloneTableFullCommand, ShowTableConstraintsCommand, ShowTablesExtendedCommand}
 import com.databricks.volt.sql.parser.SQLParserBaseParser.{CreateCatalogHeaderContext, CreateSchemaHeaderContext, QualifiedNameContext, SingleStatementContext, StringLitContext}
 import com.databricks.volt.sql.utils.AntlrUtils
 import org.antlr.v4.runtime.Token
@@ -82,7 +82,8 @@ class SQLParserBuilder extends SQLParserBaseBaseVisitor[AnyRef] {
   override def visitShowTablesExtended(ctx: SQLParserBaseParser.ShowTablesExtendedContext): AnyRef = withOrigin(ctx) {
     val filter = Option(ctx.filters)
       .map(AntlrUtils.extractRawText(_))
-      .filterNot(_.isBlank)
+      .map(_.trim)
+      .filterNot(_.isEmpty)
       .map(functions.expr)
       .orNull
     ShowTablesExtendedCommand(filter)
@@ -138,6 +139,11 @@ class SQLParserBuilder extends SQLParserBaseBaseVisitor[AnyRef] {
           create = true, replace = false, ifNotExists = createHeader.EXISTS() != null)
       case _ => throw new RuntimeException("Table Header not found")
     }
+  }
+
+  override def visitShowTableConstraints(ctx: SQLParserBaseParser.ShowTableConstraintsContext): AnyRef = {
+    val sourceTable = visitTableIdentifier(ctx.source)
+    ShowTableConstraintsCommand(sourceTable)
   }
 
 }

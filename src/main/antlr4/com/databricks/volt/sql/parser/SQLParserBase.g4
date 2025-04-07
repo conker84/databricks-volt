@@ -36,6 +36,7 @@ singleStatement
 statement
     : SHOW TABLES EXTENDED
         (WHERE filters=predicateToken)?                                         #showTablesExtended
+    | SHOW TABLE CONSTRAINTS source=qualifiedName                               #showTableConstraints
     | cloneCatalogHeader (FULL)? (DEEP|SHALLOW) CLONE source=qualifiedName
        (MANAGED LOCATION location=stringLit)?                                   #cloneCatalog
     | cloneSchemaHeader (FULL)? (DEEP|SHALLOW) CLONE source=qualifiedName
@@ -161,6 +162,8 @@ LEFT_PAREN: '(';
 RIGHT_PAREN: ')';
 COMMA: ',';
 DOT: '.';
+CONSTRAINTS: 'CONSTRAINTS';
+FOR: 'FOR';
 
 // Multi-character operator tokens need to be defined even though we don't explicitly reference
 // them so that they can be recognized as single tokens when parsing. If we split them up and

@@ -19,7 +19,7 @@ object SQLUtils extends Logging {
   private val catalogTagsTable = "system.information_schema.catalog_tags"
   private val schemaTagsTable = "system.information_schema.schema_tags"
   private val tableTagsTable = "system.information_schema.table_tags"
-  private val columnTagsQuery = s"""
+  private val columnTagsQuery = """
       |SELECT catalog_name, schema_name, table_name, column_name,
       |  concat_ws(",",
       |    collect_set(format_string("'%s' = '%s'",

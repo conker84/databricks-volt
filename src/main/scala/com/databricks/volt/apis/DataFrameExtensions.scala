@@ -2,6 +2,8 @@ package com.databricks.volt.apis
 
 import org.apache.spark.sql.{DataFrame, functions}
 
+import com.databricks.volt.sql.utils.SQLUtils.getTableConstraints
+
 object DataFrameExtensions {
 
   implicit class DataFrameImplicits(dataFrame: DataFrame) {
