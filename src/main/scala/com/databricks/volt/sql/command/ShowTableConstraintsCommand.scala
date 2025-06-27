@@ -8,7 +8,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.sql.types.{StringType, StructType}
 import org.apache.spark.sql.{Row, SparkSession}
 
-import java.util.stream
+import java.util
 import scala.jdk.CollectionConverters.asScalaIteratorConverter
 import scala.util.matching.Regex
 
@@ -53,7 +53,7 @@ case class ShowTableConstraintsCommand(tableIdentifier: TableIdentifier) extends
         case _ =>
           parseChecks(constrTypeOrProps)
       }
-      stream.Stream.of(result: _*)
+      util.stream.Stream.of(result: _*)
     })
     .iterator()
     .asScala
@@ -93,6 +93,7 @@ case class ShowTableConstraintsCommand(tableIdentifier: TableIdentifier) extends
             "refSchema" -> refSchema,
             "refTable" -> refTable,
             "refColumns" -> pkCols,
+            "rely" -> dataType.endsWith(" RELY"),
           )
         )
       case _ =>
@@ -105,7 +106,10 @@ case class ShowTableConstraintsCommand(tableIdentifier: TableIdentifier) extends
     val meta: String = pkPattern.findFirstMatchIn(dataType) match {
       case Some(m) =>
         val rawCols = m.group(1)
-        mapper.writeValueAsString(rawCols.split(",").map(_.trim.stripPrefix("`").stripSuffix("`")).toSet)
+        mapper.writeValueAsString(Map(
+          "columns" -> rawCols.split(",").map(_.trim.stripPrefix("`").stripSuffix("`")).toSet,
+          "rely" -> dataType.endsWith(" RELY"),
+        ))
       case None =>
         throw new IllegalArgumentException(s"Cannot extract PK columns for table ${tableIdentifier.toEscapedString}")
     }

@@ -46,7 +46,7 @@ class ShowTableConstraintsCommandTest extends AnyFunSuite with MockitoSugar {
     assert(result.size == 1)
     assert(result(0).getAs[String]("type") == "PRIMARY KEY")
     assert(result(0).getAs[String]("name") == "foo_pk")
-    assert(result(0).getAs[String]("meta") == "[\"pk\"]")
+    assert(result(0).getAs[String]("meta") == "{\"columns\":[\"pk\"],\"rely\":false}")
   }
 
   test("should extract FOREIGN KEY correctly") {
