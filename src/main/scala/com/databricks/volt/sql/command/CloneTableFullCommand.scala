@@ -65,7 +65,7 @@ case class CloneTableFullCommand(
           Seq(t.getMessage)
         )
     }
-    Seq(createRowWithSchema(schema, data))
+    Seq(createRowWithSchema(schema, data:_*))
 
   }
 }

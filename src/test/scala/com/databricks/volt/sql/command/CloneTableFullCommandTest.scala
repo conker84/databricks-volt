@@ -57,7 +57,7 @@ class CloneTableFullCommandTest extends AnyFunSuite with Matchers with BeforeAnd
     // Assert
     // We expect exactly one row in the result
     result.size shouldBe 1
-    val row = result(0).asInstanceOf[Row]
+    val row = result(0)
 
     // Check that we have the expected columns in the returned row
     row.getAs[String]("table_catalog") shouldBe null // because targetEntity.catalog is None
