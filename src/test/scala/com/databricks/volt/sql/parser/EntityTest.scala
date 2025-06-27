@@ -18,15 +18,15 @@ class EntityTest extends AnyFunSuite {
   test("TableIdentifier toString and toEscapedString") {
     val tableOnly = TableIdentifier("users", None, None)
     assert(tableOnly.toString == "users")
-    assert(tableOnly.toEscapedString == "`None`")
+    assert(tableOnly.toEscapedString == "`users`")
 
     val tableWithSchema = TableIdentifier("users", Some("public"), None)
     assert(tableWithSchema.toString == "public.users")
-    assert(tableWithSchema.toEscapedString == "`None`") // Bug in original implementation
+    assert(tableWithSchema.toEscapedString == "`public`.`users`")
 
     val tableWithSchemaAndCatalog = TableIdentifier("users", Some("public"), Some("myCatalog"))
     assert(tableWithSchemaAndCatalog.toString == "myCatalog.public.users")
-    assert(tableWithSchemaAndCatalog.toEscapedString == "`myCatalog`.`Some(public)`") // Bug in original implementation
+    assert(tableWithSchemaAndCatalog.toEscapedString == "`myCatalog`.`public`.`users`")
   }
 
   test("CatalogIdentifier toString and toEscapedString") {

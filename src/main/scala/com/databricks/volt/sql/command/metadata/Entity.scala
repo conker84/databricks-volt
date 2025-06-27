@@ -7,12 +7,12 @@ trait Entity {
 case class TableIdentifier(table: String, schema: Option[String] = None, catalog: Option[String] = None) extends Entity {
   override def toString: String = schema
     .map(sch => s"$sch.$table")
-    .flatMap(schTbl => catalog.map(cat => s"$cat.$schTbl"))
+    .flatMap(schTbl => catalog.map(cat => s"$cat.$schTbl").orElse(Some(schTbl)))
     .getOrElse(table)
 
   override def toEscapedString: String = schema
     .map(sch => s"`$sch`.`$table`")
-    .flatMap(schTbl => catalog.map(cat => s"`$cat`.$schTbl"))
+    .flatMap(schTbl => catalog.map(cat => s"`$cat`.$schTbl").orElse(Some(schTbl)))
     .getOrElse(s"`$table`")
 }
 
